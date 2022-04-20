@@ -1,66 +1,39 @@
-export class CellOfLife {
-  constructor(private cellValue: number, private neighboursNumber: number) {}
-  public tick() {
-    if (this.neighboursNumber === 3) return 1;
-    if (this.cellValue === 1 && this.neighboursNumber === 2) return 1;
+export class Cell {
+  constructor(private state: number, private neighborsSum?: number) {}
+
+  public setNextState() {
+    if (this.state === 1 && this.neighborsSum === 2) return 1
+    if (this.neighborsSum === 3) return 1;
     return 0;
   }
 }
 
-export class GameOfLife {
-  constructor(private inputBoard: Board) {}
+export class Board {
+  constructor(private board: (0 | 1)[][]) {}
+
   public tick() {
-    this.inputBoard = this.inputBoard.map((row, rowIndex) => {
-      return row.map((cell, cellIndex) => {
-        const neighboursNumber = this.getNeighboursNumber({
-          cellIndex,
-          rowIndex,
-        });
-        return new CellOfLife(cell, neighboursNumber).tick();
+    this.board = this.board.map((row: number[], rowIdx: number) => {
+      return row.map((__, cellIdx: number) => {
+        const neighbours = [
+          this.getCellContent(rowIdx - 1, cellIdx - 1),
+          this.getCellContent(rowIdx - 1, cellIdx),
+          this.getCellContent(rowIdx - 1, cellIdx + 1),
+          this.getCellContent(rowIdx, cellIdx - 1),
+          this.getCellContent(rowIdx, cellIdx + 1),
+          this.getCellContent(rowIdx + 1, cellIdx - 1),
+          this.getCellContent(rowIdx + 1, cellIdx),
+          this.getCellContent(rowIdx + 1, cellIdx + 1),
+        ];
+        const neighborsSum = neighbours.reduce((sum, a) => sum + a, 0);
+        const cell = new Cell(this.getCellContent(rowIdx, cellIdx), neighborsSum);
+        return cell.setNextState();
       });
     });
-    return this;
+    return this.board;
   }
-
-  public getState() {
-    return this.inputBoard;
-  }
-
-  private getNeighboursNumber(cellPosition: CellPosition) {
-    return getNeighboursNumber(this.inputBoard, cellPosition);
+  
+  private getCellContent(rowIndex: number, cellIndex: number) {
+    return (this.board[rowIndex] && this.board[rowIndex][cellIndex] ? 1 : 0);
   }
 }
 
-type Cell = 0 | 1;
-type Row = Cell[];
-export type Board = Row[];
-
-type CellPosition = {
-  rowIndex: number;
-  cellIndex: number;
-};
-
-const getCellValue = (
-  row: undefined | number[],
-  cellIndex: number
-): Cell => {
-  if (row === undefined) return 0;
-  return row[cellIndex] === 1 ? 1 : 0;
-};
-
-export const getNeighboursNumber = (
-  inputBoard: Board,
-  cellPosition: CellPosition
-): number => {
-  const { cellIndex, rowIndex } = cellPosition;
-  return (
-    getCellValue(inputBoard[rowIndex - 1], cellIndex - 1) +
-    getCellValue(inputBoard[rowIndex - 1], cellIndex) +
-    getCellValue(inputBoard[rowIndex - 1], cellIndex + 1) +
-    getCellValue(inputBoard[rowIndex], cellIndex - 1) +
-    getCellValue(inputBoard[rowIndex], cellIndex + 1) +
-    getCellValue(inputBoard[rowIndex + 1], cellIndex - 1) +
-    getCellValue(inputBoard[rowIndex + 1], cellIndex) +
-    getCellValue(inputBoard[rowIndex + 1], cellIndex + 1)
-  );
-};
